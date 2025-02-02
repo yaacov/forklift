@@ -1,6 +1,7 @@
 package vsphere
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"text/template"
 
 	api "github.com/konveyor/forklift-controller/pkg/apis/forklift/v1beta1"
 	"github.com/konveyor/forklift-controller/pkg/apis/forklift/v1beta1/plan"
@@ -688,6 +690,29 @@ func (r *Builder) mapNetworks(vm *model.VM, object *cnv.VirtualMachineSpec) (err
 		}
 		for _, nic := range needed {
 			networkName := fmt.Sprintf("net-%v", numNetworks)
+
+			// If the network name template is set, use it to generate the network name.
+			networkNameTemplate := r.getNetworkNameTemplate(vm)
+			if networkNameTemplate != "" {
+				// Create template data
+				templateData := api.NetworkNameTemplateData{
+					NetworkName:      mapped.Destination.Name,
+					NetworkNamespace: mapped.Destination.Namespace,
+					NetworkType:      mapped.Destination.Type,
+					NetworkIndex:     numNetworks,
+				}
+
+				networkName, err = r.geNetworkName(networkNameTemplate, &templateData)
+				if err != nil {
+					// Failed to generate network name using template
+					r.Log.Info("Failed to generate network name using template, using default name", "template", networkNameTemplate, "error", err)
+
+					// Fallback to default name and reset error
+					networkName = fmt.Sprintf("net-%v", numNetworks)
+					err = nil
+				}
+			}
+
 			numNetworks++
 			kNetwork := cnv.Network{
 				Name: networkName,
@@ -1102,4 +1127,54 @@ func (r *Builder) SetPopulatorDataSourceLabels(vmRef ref.Ref, pvcs []*core.Persi
 func (r *Builder) GetPopulatorTaskName(pvc *core.PersistentVolumeClaim) (taskName string, err error) {
 	err = planbase.VolumePopulatorNotSupportedError
 	return
+}
+
+// Get the plan VM for the given vsphere VM
+func (r *Builder) getPlanVM(vm *model.VM) *plan.VM {
+	for _, planVM := range r.Plan.Spec.VMs {
+		if planVM.ID == vm.ID {
+			return &planVM
+		}
+	}
+
+	return nil
+}
+
+// getNetworkNameTemplate returns the network name template
+func (r *Builder) getNetworkNameTemplate(vm *model.VM) string {
+	// Get plan VM
+	planVM := r.getPlanVM(vm)
+	if planVM == nil {
+		return ""
+	}
+
+	// if vm.NetworkNameTemplate is set, use it
+	if planVM.NetworkNameTemplate != "" {
+		return planVM.NetworkNameTemplate
+	}
+
+	// if planSpec.NetworkNameTemplate is set, use it
+	if r.Plan.Spec.NetworkNameTemplate != "" {
+		return r.Plan.Spec.NetworkNameTemplate
+	}
+
+	return ""
+}
+
+func (r *Builder) geNetworkName(networkNameTemplate string, templateData *api.NetworkNameTemplateData) (string, error) {
+	var buf bytes.Buffer
+
+	// Parse template syntax
+	tmpl, err := template.New("pvcname").Parse(networkNameTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	// Execute template
+	err = tmpl.Execute(&buf, templateData)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }

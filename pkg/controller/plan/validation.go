@@ -1,6 +1,7 @@
 package plan
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
 	"encoding/hex"
@@ -9,6 +10,7 @@ import (
 	"net"
 	"path"
 	"strconv"
+	"text/template"
 
 	k8snet "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	api "github.com/konveyor/forklift-controller/pkg/apis/forklift/v1beta1"
@@ -164,6 +166,11 @@ func (r *Reconciler) validate(plan *api.Plan) error {
 		return err
 	}
 
+	// Validate network name template
+	if err := r.validateNetworkNameTemplate(plan); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -198,6 +205,22 @@ func (r *Reconciler) validateOpenShiftVersion(plan *api.Plan) error {
 		if err != nil {
 			plan.Status.SetCondition(unsupportedVersion)
 		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) validateNetworkNameTemplate(plan *api.Plan) error {
+	if err := r.IsValidNetworkNameTemplate(plan.Spec.NetworkNameTemplate); err != nil {
+		invalidPVCNameTemplate := libcnd.Condition{
+			Type:     NotValid,
+			Status:   True,
+			Category: Critical,
+			Message:  "Network name template is invalid.",
+			Items:    []string{},
+		}
+
+		plan.Status.SetCondition(invalidPVCNameTemplate)
 	}
 
 	return nil
@@ -454,6 +477,13 @@ func (r *Reconciler) validateVM(plan *api.Plan) error {
 		Message:  "Changed Block Tracking (CBT) has not been enabled on some VM. This feature is a prerequisite for VM warm migration.",
 		Items:    []string{},
 	}
+	networkNameInvalid := libcnd.Condition{
+		Type:     NotValid,
+		Status:   True,
+		Category: Critical,
+		Message:  "VM network name template is invalid.",
+		Items:    []string{},
+	}
 
 	setOf := map[string]bool{}
 	//
@@ -589,6 +619,12 @@ func (r *Reconciler) validateVM(plan *api.Plan) error {
 				missingCbtForWarm.Items = append(missingCbtForWarm.Items, ref.String())
 			}
 		}
+		// is valid vm pvc name template
+		if plan.Spec.VMs[i].NetworkNameTemplate != "" {
+			if err := r.IsValidNetworkNameTemplate(plan.Spec.VMs[i].NetworkNameTemplate); err != nil {
+				networkNameInvalid.Items = append(networkNameInvalid.Items, ref.String())
+			}
+		}
 	}
 	if len(notFound.Items) > 0 {
 		plan.Status.SetCondition(notFound)
@@ -625,6 +661,9 @@ func (r *Reconciler) validateVM(plan *api.Plan) error {
 	}
 	if len(missingCbtForWarm.Items) > 0 {
 		plan.Status.SetCondition(missingCbtForWarm)
+	}
+	if len(networkNameInvalid.Items) > 0 {
+		plan.Status.SetCondition(networkNameInvalid)
 	}
 
 	return nil
@@ -1135,4 +1174,52 @@ func (r *Reconciler) checkOCPVersion(clientset kubernetes.Interface) error {
 	}
 
 	return nil
+}
+
+func (r *Reconciler) IsValidNetworkNameTemplate(networkNameTemplate string) error {
+	if networkNameTemplate == "" {
+		return nil
+	}
+
+	testData := api.NetworkNameTemplateData{
+		NetworkName:      "test-network",
+		NetworkNamespace: "test-namespace",
+		NetworkType:      "Multus",
+		NetworkIndex:     0,
+	}
+
+	result, err := r.IsValidTemplate(networkNameTemplate, testData)
+	if err != nil {
+		return err
+	}
+
+	// Validate that template output is a valid k8s label
+	errs := k8svalidation.IsValidLabelValue(result)
+	if len(errs) > 0 {
+		return liberr.New("Template output is not a valid k8s label", "errors", errs)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) IsValidTemplate(templateStr string, testData interface{}) (string, error) {
+	// Validate golang template syntax
+	tmpl, err := template.New("template").Parse(templateStr)
+	if err != nil {
+		return "", liberr.Wrap(err, "Invalid template syntax")
+	}
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, testData)
+	if err != nil {
+		return "", liberr.Wrap(err, "Template execution failed")
+	}
+	result := buf.String()
+
+	// Empty output is not valid
+	if result == "" {
+		return "", liberr.New("Template output is empty")
+	}
+
+	return result, nil
 }
