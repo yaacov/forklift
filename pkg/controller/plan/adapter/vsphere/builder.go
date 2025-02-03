@@ -1,6 +1,7 @@
 package vsphere
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"text/template"
 
 	api "github.com/konveyor/forklift-controller/pkg/apis/forklift/v1beta1"
 	"github.com/konveyor/forklift-controller/pkg/apis/forklift/v1beta1/plan"
@@ -784,6 +786,7 @@ func (r *Builder) removeSharedDisks(vm *model.VM) {
 func (r *Builder) mapDisks(vm *model.VM, vmRef ref.Ref, persistentVolumeClaims []*core.PersistentVolumeClaim, object *cnv.VirtualMachineSpec) {
 	var kVolumes []cnv.Volume
 	var kDisks []cnv.Disk
+	var err error
 
 	disks := vm.Disks
 	sort.Slice(disks, func(i, j int) bool {
@@ -811,6 +814,27 @@ func (r *Builder) mapDisks(vm *model.VM, vmRef ref.Ref, persistentVolumeClaims [
 	for i, disk := range disks {
 		pvc := pvcMap[r.baseVolume(disk.File)]
 		volumeName := fmt.Sprintf("vol-%v", i)
+
+		// If the volume name template is set, use it to generate the volume name.
+		volumeNameTemplate := r.getVolumeNameTemplate(vm)
+		if volumeNameTemplate != "" {
+			// Create template data
+			templateData := api.VolumeNameTemplateData{
+				PVCName:     pvc.Name,
+				VolumeIndex: i,
+			}
+
+			volumeName, err = r.executeTemplate(volumeNameTemplate, &templateData)
+			if err != nil {
+				// Failed to generate volume name using template
+				r.Log.Info("Failed to generate volume name using template, using default name", "template", volumeNameTemplate, "error", err)
+
+				// fallback to default name and reset error
+				volumeName = fmt.Sprintf("vol-%v", i)
+				err = nil
+			}
+		}
+
 		volume := cnv.Volume{
 			Name: volumeName,
 			VolumeSource: cnv.VolumeSource{
@@ -1102,4 +1126,54 @@ func (r *Builder) SetPopulatorDataSourceLabels(vmRef ref.Ref, pvcs []*core.Persi
 func (r *Builder) GetPopulatorTaskName(pvc *core.PersistentVolumeClaim) (taskName string, err error) {
 	err = planbase.VolumePopulatorNotSupportedError
 	return
+}
+
+// Get the plan VM for the given vsphere VM
+func (r *Builder) getPlanVM(vm *model.VM) *plan.VM {
+	for _, planVM := range r.Plan.Spec.VMs {
+		if planVM.ID == vm.ID {
+			return &planVM
+		}
+	}
+
+	return nil
+}
+
+func (r *Builder) executeTemplate(templateText string, templateData any) (string, error) {
+	var buf bytes.Buffer
+
+	// Parse template syntax
+	tmpl, err := template.New("template").Parse(templateText)
+	if err != nil {
+		return "", err
+	}
+
+	// Execute template
+	err = tmpl.Execute(&buf, templateData)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+// getVolumeNameTemplate returns the volume name template
+func (r *Builder) getVolumeNameTemplate(vm *model.VM) string {
+	// Get plan VM
+	planVM := r.getPlanVM(vm)
+	if planVM == nil {
+		return ""
+	}
+
+	// if vm.VolumeNameTemplate is set, use it
+	if planVM.VolumeNameTemplate != "" {
+		return planVM.VolumeNameTemplate
+	}
+
+	// if planSpec.VolumeNameTemplate is set, use it
+	if r.Plan.Spec.VolumeNameTemplate != "" {
+		return r.Plan.Spec.VolumeNameTemplate
+	}
+
+	return ""
 }
