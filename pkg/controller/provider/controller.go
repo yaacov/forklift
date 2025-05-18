@@ -106,17 +106,18 @@ func Add(mgr manager.Manager) error {
 	}
 	// Primary CR.
 	err = cnt.Watch(
-		source.Kind(mgr.GetCache(), &api.Provider{}),
-		&handler.EnqueueRequestForObject{},
-		&ProviderPredicate{})
+		source.Kind(mgr.GetCache(), &api.Provider{},
+			&handler.TypedEnqueueRequestForObject[*api.Provider]{},
+		))
 	if err != nil {
 		log.Trace(err)
 		return err
 	}
 	// References.
 	err = cnt.Watch(
-		source.Kind(mgr.GetCache(), &v1.Secret{}),
-		libref.Handler(&api.Provider{}))
+		source.Kind(mgr.GetCache(), &v1.Secret{},
+			libref.TypedHandler[*v1.Secret](&v1.Secret{}),
+		))
 	if err != nil {
 		log.Trace(err)
 		return err

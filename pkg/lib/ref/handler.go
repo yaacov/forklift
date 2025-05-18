@@ -41,6 +41,33 @@ func Handler(owner interface{}) handler.EventHandler {
 		})
 }
 
+// Build a typed event handler.
+// Example:
+//
+//	err = cnt.Watch(
+//	   source.Kind(mgr.GetCache(), &api.Referenced{}),
+//	   libref.TypedHandler(&api.Owner{}))
+func TypedHandler[T client.Object](owner interface{}) handler.TypedEventHandler[T, reconcile.Request] {
+	log := logging.WithName("ref|typed-handler")
+	ownerKind := ToKind(owner)
+	return handler.TypedEnqueueRequestsFromMapFunc(
+		func(ctx context.Context, a T) []reconcile.Request {
+			refKind := ToKind(a)
+			list := GetRequests(ownerKind, a)
+			if len(list) > 0 {
+				log.V(4).Info(
+					"typed handler: request list.",
+					"referenced",
+					refKind,
+					"owner",
+					ownerKind,
+					"list",
+					list)
+			}
+			return list
+		})
+}
+
 // Impl the handler interface.
 func GetRequests(kind string, a client.Object) []reconcile.Request {
 	target := Target{

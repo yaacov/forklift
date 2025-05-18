@@ -283,3 +283,22 @@ func RequestForMigration(ctx context.Context, a client.Object) (list []reconcile
 
 	return
 }
+
+// TypedRequestForMigration is a typed version of RequestForMigration for use with typed handlers
+func TypedRequestForMigration(ctx context.Context, m *api.Migration) []reconcile.Request {
+	list := []reconcile.Request{}
+	ref := &m.Spec.Plan
+	if !libref.RefSet(ref) {
+		return list
+	}
+	list = append(
+		list,
+		reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: ref.Namespace,
+				Name:      ref.Name,
+			},
+		})
+
+	return list
+}

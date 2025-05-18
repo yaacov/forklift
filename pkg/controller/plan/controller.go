@@ -77,9 +77,9 @@ func Add(mgr manager.Manager) error {
 	}
 	// Primary CR.
 	err = cnt.Watch(
-		source.Kind(mgr.GetCache(), &api.Plan{}),
-		&handler.EnqueueRequestForObject{},
-		&PlanPredicate{})
+		source.Kind(mgr.GetCache(), &api.Plan{},
+			&handler.TypedEnqueueRequestForObject[*api.Plan]{},
+		))
 	if err != nil {
 		log.Trace(err)
 		return err
@@ -89,8 +89,11 @@ func Add(mgr manager.Manager) error {
 	// events when changes to the provider inventory are detected.
 	channel := make(chan event.GenericEvent, 10)
 	err = cnt.Watch(
-		&source.Channel{Source: channel},
-		&handler.EnqueueRequestForObject{})
+		source.Channel(
+			channel,
+			&handler.EnqueueRequestForObject{},
+		),
+	)
 	if err != nil {
 		log.Trace(err)
 		return err
@@ -98,48 +101,48 @@ func Add(mgr manager.Manager) error {
 	// References.
 	// Provider.
 	err = cnt.Watch(
-		source.Kind(mgr.GetCache(), &api.Provider{}),
-		libref.Handler(&api.Plan{}),
-		&ProviderPredicate{
-			client:  mgr.GetClient(),
-			channel: channel,
-		})
+		source.Kind(mgr.GetCache(), &api.Provider{},
+			libref.TypedHandler[*api.Provider](&api.Provider{}),
+		))
 	if err != nil {
 		log.Trace(err)
 		return err
 	}
 	// NetworkMap.
 	err = cnt.Watch(
-		source.Kind(mgr.GetCache(), &api.NetworkMap{}),
-		libref.Handler(&api.Plan{}),
-		&NetMapPredicate{})
+		source.Kind(mgr.GetCache(), &api.NetworkMap{},
+			libref.TypedHandler[*api.NetworkMap](&api.NetworkMap{}),
+		))
 	if err != nil {
 		log.Trace(err)
 		return err
 	}
 	// StorageMap.
 	err = cnt.Watch(
-		source.Kind(mgr.GetCache(), &api.StorageMap{}),
-		libref.Handler(&api.Plan{}),
-		&DsMapPredicate{})
+		source.Kind(mgr.GetCache(), &api.StorageMap{},
+			libref.TypedHandler[*api.StorageMap](&api.StorageMap{}),
+		))
 	if err != nil {
 		log.Trace(err)
 		return err
 	}
 	// Hook..
 	err = cnt.Watch(
-		source.Kind(mgr.GetCache(), &api.Hook{}),
-		handler.EnqueueRequestsFromMapFunc(RequestForMigration),
-		&HookPredicate{})
+		source.Kind(mgr.GetCache(), &api.Hook{},
+			libref.TypedHandler[*api.Hook](&api.Hook{}),
+		))
 	if err != nil {
 		log.Trace(err)
 		return err
 	}
 	// Migration.
 	err = cnt.Watch(
-		source.Kind(mgr.GetCache(), &api.Migration{}),
-		handler.EnqueueRequestsFromMapFunc(RequestForMigration),
-		&MigrationPredicate{})
+		source.Kind(
+			mgr.GetCache(),
+			&api.Migration{},
+			handler.TypedEnqueueRequestsFromMapFunc[*api.Migration](TypedRequestForMigration),
+		),
+	)
 	if err != nil {
 		log.Trace(err)
 		return err

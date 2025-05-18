@@ -569,7 +569,7 @@ func (r *Builder) DataVolumes(vmRef ref.Ref, secret *core.Secret, _ *core.Config
 		dvSpec := cdi.DataVolumeSpec{
 			Source: &dvSource,
 			Storage: &cdi.StorageSpec{
-				Resources: core.ResourceRequirements{
+				Resources: core.VolumeResourceRequirements{
 					Requests: core.ResourceList{
 						core.ResourceStorage: *resource.NewQuantity(disk.Capacity, resource.BinarySI),
 					},
@@ -1348,7 +1348,7 @@ func (r *Builder) PopulatorVolumes(vmRef ref.Ref, annotations map[string]string,
 					Spec: core.PersistentVolumeClaimSpec{
 						StorageClassName: &storageClass,
 						VolumeMode:       &pvblock,
-						Resources: core.ResourceRequirements{
+						Resources: core.VolumeResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceStorage: *resource.NewQuantity(disk.Capacity, resource.BinarySI),
 							},

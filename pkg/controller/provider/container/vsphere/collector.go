@@ -422,7 +422,7 @@ func (r *Collector) getUpdates(ctx context.Context) error {
 	defer pc.Destroy(context.Background())
 	filter := r.filter(pc)
 	filter.Options.MaxObjectUpdates = MaxObjectUpdates
-	err = pc.CreateFilter(ctx, filter.CreateFilter)
+	_, err = pc.CreateFilter(ctx, filter.CreateFilter)
 	if err != nil {
 		return liberr.Wrap(err)
 	}
@@ -647,7 +647,6 @@ func (r *Collector) filter(pc *property.Collector) *property.WaitFilter {
 				PropSet: r.propertySpec(),
 			},
 		},
-		Options: &types.WaitOptions{},
 	}
 }
 
