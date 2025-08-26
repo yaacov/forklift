@@ -1257,8 +1257,13 @@ func (r *Builder) PopulatorVolumes(vmRef ref.Ref, annotations map[string]string,
 					"vmID":    vmRef.ID,
 				}
 				r.Log.Info("target namespace for migration", "namespace", namespace)
+
+				// Set default name for the pvc
+				defaultPVCName := fmt.Sprintf("%s-%s-%s", r.Plan.Name, vm.Name, uuid.New().String()[:8])
+
 				pvc := core.PersistentVolumeClaim{
 					ObjectMeta: metav1.ObjectMeta{
+						Name:        defaultPVCName,
 						Namespace:   namespace,
 						Labels:      labels,
 						Annotations: annotations,
