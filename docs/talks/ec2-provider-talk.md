@@ -5,7 +5,7 @@
 
 ---
 
-## 📋 Agenda
+## Agenda
 
 1. **About AWS EC2 Virtualization** (~10 min)
    - Instance types: Xen, Nitro, and Metal
@@ -86,7 +86,7 @@ HVM (Hardware Virtual Machine) is a virtualization mode that uses **hardware-ass
 │   │ • /dev/nvme1n1 (Nitro)  │        │ • /dev/nvme0n1 (Nitro)  │          │
 │   └─────────────────────────┘        └─────────────────────────┘          │
 │                                                                             │
-│   ❌ Cannot be migrated!             ✅ Fully supported!                   │
+│   NOT migrated!                      Fully supported!                      │
 │   (Data lost when instance stops)    (Snapshotted and transferred)        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -119,7 +119,7 @@ HVM (Hardware Virtual Machine) is a virtualization mode that uses **hardware-ass
 │   ├─ AZ: us-east-1c                                                        │
 │   └─ AZ: us-east-1d                                                        │
 │                                                                             │
-│   ⚠️  CRITICAL: EBS volumes are AZ-specific!                               │
+│   CRITICAL: EBS volumes are AZ-specific!                                   │
 │   Snapshots can cross AZs, but final volumes must match node AZ.          │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -166,9 +166,9 @@ This is the key mechanism that enables EC2 migration:
 │   │                                          └─────────────────────┘       │
 │   └────────────────────────────────────────────────────────────────────────┘
 │                                                                             │
-│   📸 Snapshots are REGION-WIDE (not AZ-specific like volumes)              │
-│   📸 CreateVolume API accepts AvailabilityZone parameter                   │
-│   📸 This enables creating volumes in ANY AZ from the same snapshot        │
+│   Snapshots are REGION-WIDE (not AZ-specific like volumes)                 │
+│   CreateVolume API accepts AvailabilityZone parameter                      │
+│   This enables creating volumes in ANY AZ from the same snapshot           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -201,13 +201,13 @@ volume, _ := targetClient.CreateVolume(ctx, createVolInput)
 EC2 Instance (Nitro)
 ├─ /dev/nvme0n1  ─── Root EBS Volume (gp3)
 ├─ /dev/nvme1n1  ─── Data EBS Volume (io2)
-└─ /dev/nvme2n1  ─── Instance Store (ephemeral) ⚠️ NOT MIGRATED
+└─ /dev/nvme2n1  ─── Instance Store (ephemeral) - NOT MIGRATED
 ```
 
 | Device Type | Migration Support | Notes |
 |-------------|------------------|-------|
-| EBS Volumes | ✅ Full support | Snapshotted and migrated |
-| Instance Store | ❌ Not supported | Ephemeral, data lost on stop |
+| EBS Volumes | Full support | Snapshotted and migrated |
+| Instance Store | Not supported | Ephemeral, data lost on stop |
 
 #### Elastic Network Adapter (ENA)
 
@@ -245,7 +245,7 @@ AWS provides two primary storage services:
 │   │ IOPS │ (max)    │        │ IOPS │ (max)    │       │ MiBps │ MiBps│   │
 │   └──────┴──────────┘        └──────┴──────────┘       └───────┴──────┘   │
 │                                                                             │
-│   ⭐ All EBS types are supported for migration!                            │
+│   All EBS types are supported for migration!                               │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -321,8 +321,8 @@ EBS volumes can **only attach to nodes in the same Availability Zone**. The EC2 
 │                                      └─────────────────────────────────┘  │
 │                                                                             │
 │   Applied to:                                                               │
-│   ✅ Migrated VirtualMachine                                               │
-│   ✅ virt-v2v Conversion Pod                                               │
+│   - Migrated VirtualMachine                                                 │
+│   - virt-v2v Conversion Pod                                                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -526,9 +526,9 @@ In KubeVirt, **binding** defines how a VM's virtual NIC connects to the network:
 │   │ VM IP → Pod IP      │           │ Direct connection   │               │
 │   └─────────────────────┘           └─────────────────────┘               │
 │                                                                             │
-│   ❌ MAC not preserved              ✅ MAC preserved                       │
-│   ❌ No inbound connections         ✅ L2 connectivity                     │
-│   ✅ Simple, works everywhere       ⚠️  Requires UDN/bridge support        │
+│   MAC not preserved                 MAC preserved                          │
+│   No inbound connections            L2 connectivity                        │
+│   Simple, works everywhere          Requires UDN/bridge support            │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -585,7 +585,7 @@ In KubeVirt, **binding** defines how a VM's virtual NIC connects to the network:
 #### Same Region Requirement
 
 ```
-✅ SUPPORTED:
+SUPPORTED:
    AWS Account A (us-east-1) ──► OpenShift (us-east-1)
    
    AWS Account A (us-east-1) ──► AWS Account B (us-east-1)  [cross-account]
@@ -593,8 +593,8 @@ In KubeVirt, **binding** defines how a VM's virtual NIC connects to the network:
                                       ▼
                                  OpenShift (us-east-1)
 
-❌ NOT SUPPORTED:
-   AWS Account A (us-east-1) ──✗──► OpenShift (eu-west-1)
+NOT SUPPORTED:
+   AWS Account A (us-east-1) --X--> OpenShift (eu-west-1)
    
    Reason: EBS snapshot sharing only works within the same region
 ```
