@@ -395,9 +395,9 @@ ip-10-0-3-300.ec2.internal     Ready    us-east-1b
 
 ```
    10.0.0.0/16
-   ────┬────  ─┬─
-       │       └── Prefix length: how many bits are the network part
-       └────────── Network address
+   ────┬──  ─┬─
+       │     └── Prefix length: how many bits are the network part
+       └──────── Network address
 
    /16 = 16 bits for network, 16 bits for hosts = 65,536 addresses
    /24 = 24 bits for network, 8 bits for hosts  = 256 addresses
