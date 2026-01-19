@@ -11,16 +11,45 @@
 # 4. At least one stopped EC2 instance to migrate
 
 # ============================================
+# Fetch AWS Credentials from Cluster Secret
+# ============================================
+# ROSA/OCP clusters store AWS credentials in kube-system/aws-creds
+# You can use these for the target account, or provide your own for the source
+
+echo "Fetching AWS credentials from cluster secret (kube-system/aws-creds)..."
+
+# Extract credentials from the cluster's AWS secret
+CLUSTER_AWS_KEY=$(kubectl get secret aws-creds -n kube-system -o jsonpath='{.data.aws_access_key_id}' 2>/dev/null | base64 -d)
+CLUSTER_AWS_SECRET=$(kubectl get secret aws-creds -n kube-system -o jsonpath='{.data.aws_secret_access_key}' 2>/dev/null | base64 -d)
+
+if [ -n "$CLUSTER_AWS_KEY" ]; then
+    echo "Found cluster AWS credentials (aws_access_key_id: ${CLUSTER_AWS_KEY:0:8}...)"
+else
+    echo "Warning: Could not fetch cluster AWS credentials from kube-system/aws-creds"
+    echo "You may need to provide credentials manually"
+fi
+
+# ============================================
 # Configuration - EDIT THESE VALUES
 # ============================================
-export EC2_KEY="${EC2_KEY:-AKIAXXXXXXXXXXXXXXXX}"
-export EC2_SECRET="${EC2_SECRET:-your-secret-key-here}"
+# Use cluster credentials if available, otherwise use provided values
+export EC2_KEY="${EC2_KEY:-${CLUSTER_AWS_KEY:-AKIAXXXXXXXXXXXXXXXX}}"
+export EC2_SECRET="${EC2_SECRET:-${CLUSTER_AWS_SECRET:-your-secret-key-here}}"
 export EC2_REGION="${EC2_REGION:-us-east-1}"
 export PROVIDER_NAME="${PROVIDER_NAME:-demo-ec2}"
 export TARGET_NAMESPACE="${TARGET_NAMESPACE:-migrated-vms}"
 export PLAN_NAME="${PLAN_NAME:-demo-migration}"
 # Set this to your EC2 instance ID
 export VM_ID="${VM_ID:-i-0abc123def456}"
+
+echo ""
+echo "Configuration:"
+echo "  EC2_KEY:          ${EC2_KEY:0:8}..."
+echo "  EC2_REGION:       $EC2_REGION"
+echo "  PROVIDER_NAME:    $PROVIDER_NAME"
+echo "  TARGET_NAMESPACE: $TARGET_NAMESPACE"
+echo "  VM_ID:            $VM_ID"
+echo ""
 
 # ============================================
 # Demo Part 1: Provider Creation & Inventory
