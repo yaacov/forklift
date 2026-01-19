@@ -33,17 +33,17 @@
 #### Three Generations of Virtualization
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                     EC2 Virtualization Evolution                            │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   Xen (2006)          Nitro (2017)           Metal (2018+)                 │
-│   ├─ PV & HVM modes   ├─ Custom hypervisor   ├─ No hypervisor             │
-│   ├─ Type 1           ├─ Hardware offload    ├─ Bare metal access         │
-│   ├─ Software-based   ├─ NVMe/ENA drivers    ├─ Nested virtualization     │
-│   └─ Limited perf     └─ Near-bare-metal     └─ Full hardware control     │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                     EC2 Virtualization Evolution                            |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   Xen (2006)            Nitro (2017)            Metal (2018+)               |
+|   +-- PV & HVM modes    +-- Custom hypervisor   +-- No hypervisor           |
+|   +-- Type 1            +-- Hardware offload    +-- Bare metal access       |
+|   +-- Software-based    +-- NVMe/ENA drivers    +-- Nested virtualization   |
+|   +-- Limited perf      +-- Near-bare-metal     +-- Full hardware control   |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 | Generation | Technology | Characteristics | Instance Examples |
@@ -73,23 +73,23 @@ HVM (Hardware Virtual Machine) is a virtualization mode that uses **hardware-ass
 **Instance Store** (also called "ephemeral storage") is temporary block storage **physically attached** to the host machine:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    Instance Store vs EBS                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   Instance Store (Ephemeral)         EBS (Persistent)                      │
-│   ┌─────────────────────────┐        ┌─────────────────────────┐          │
-│   │ • Physically on host    │        │ • Network-attached      │          │
-│   │ • Lost on stop/terminate│        │ • Persists independently│          │
-│   │ • Very high IOPS        │        │ • Snapshottable         │          │
-│   │ • Free with instance    │        │ • Charged separately    │          │
-│   │ • /dev/nvme1n1 (Nitro)  │        │ • /dev/nvme0n1 (Nitro)  │          │
-│   └─────────────────────────┘        └─────────────────────────┘          │
-│                                                                             │
-│   NOT migrated!                      Fully supported!                      │
-│   (Data lost when instance stops)    (Snapshotted and transferred)        │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                    Instance Store vs EBS                                    |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   Instance Store (Ephemeral)           EBS (Persistent)                     |
+|   +---------------------------+        +---------------------------+        |
+|   | - Physically on host      |        | - Network-attached        |        |
+|   | - Lost on stop/terminate  |        | - Persists independently  |        |
+|   | - Very high IOPS          |        | - Snapshottable           |        |
+|   | - Free with instance      |        | - Charged separately      |        |
+|   | - /dev/nvme1n1 (Nitro)    |        | - /dev/nvme0n1 (Nitro)    |        |
+|   +---------------------------+        +---------------------------+        |
+|                                                                             |
+|   NOT migrated!                        Fully supported!                     |
+|   (Data lost when instance stops)      (Snapshotted and transferred)        |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 **Why Instance Store Cannot Be Migrated:**
@@ -108,21 +108,21 @@ HVM (Hardware Virtual Machine) is a virtualization mode that uses **hardware-ass
 ### 1.2 Regions and Availability Zones
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    AWS Global Infrastructure                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   Region: us-east-1 (N. Virginia)                                          │
-│   ├─ AZ: us-east-1a  ◄─── OpenShift Worker Nodes                          │
-│   │   └─ EBS Volumes MUST be in same AZ as nodes!                         │
-│   ├─ AZ: us-east-1b                                                        │
-│   ├─ AZ: us-east-1c                                                        │
-│   └─ AZ: us-east-1d                                                        │
-│                                                                             │
-│   CRITICAL: EBS volumes are AZ-specific!                                   │
-│   Snapshots can cross AZs, but final volumes must match node AZ.          │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                    AWS Global Infrastructure                                |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   Region: us-east-1 (N. Virginia)                                           |
+|   +-- AZ: us-east-1a  <--- OpenShift Worker Nodes                           |
+|   |   +-- EBS Volumes MUST be in same AZ as nodes!                          |
+|   +-- AZ: us-east-1b                                                        |
+|   +-- AZ: us-east-1c                                                        |
+|   +-- AZ: us-east-1d                                                        |
+|                                                                             |
+|   CRITICAL: EBS volumes are AZ-specific!                                    |
+|   Snapshots can cross AZs, but final volumes must match node AZ.            |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 **Key Points:**
@@ -136,42 +136,42 @@ HVM (Hardware Virtual Machine) is a virtualization mode that uses **hardware-ass
 This is the key mechanism that enables EC2 migration:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    Cross-AZ Migration via Snapshots                         │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   Source AZ (us-east-1a)          Target AZ (us-east-1c)                   │
-│   ┌─────────────────────┐         ┌─────────────────────┐                  │
-│   │ EC2 Instance        │         │ OpenShift Nodes     │                  │
-│   │ ┌─────────────────┐ │         │ ┌─────────────────┐ │                  │
-│   │ │ EBS Volume      │ │         │ │ Worker Node     │ │                  │
-│   │ │ vol-source      │ │         │ │ (needs vol here)│ │                  │
-│   │ └────────┬────────┘ │         │ └────────▲────────┘ │                  │
-│   └──────────┼──────────┘         └──────────┼──────────┘                  │
-│              │                               │                              │
-│              │ CreateSnapshot                │                              │
-│              ▼                               │                              │
-│   ┌──────────────────────────────────────────┼─────────────────────────────┐
-│   │                AWS Region (us-east-1)    │                             │
-│   │         ┌─────────────────────┐          │                             │
-│   │         │   EBS Snapshot      │          │                             │
-│   │         │   snap-xxx          │          │                             │
-│   │         │   (region-wide,     │──────────┘                             │
-│   │         │    not AZ-specific!)│  CreateVolume(AZ=us-east-1c)          │
-│   │         └─────────────────────┘                                        │
-│   │                                          ┌─────────────────────┐       │
-│   │                                          │ NEW EBS Volume      │       │
-│   │                                          │ vol-target          │       │
-│   │                                          │ (in us-east-1c!)    │       │
-│   │                                          └─────────────────────┘       │
-│   └────────────────────────────────────────────────────────────────────────┘
-│                                                                             │
-│   Snapshots are REGION-WIDE (not AZ-specific like volumes)                 │
-│   CreateVolume API accepts AvailabilityZone parameter                      │
-│   This enables creating volumes in ANY AZ from the same snapshot           │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
++------------------------------------------------------------------------------+
+|                    Cross-AZ Migration via Snapshots                          |
++------------------------------------------------------------------------------+
+|                                                                              |
+|   Source AZ (us-east-1a)            Target AZ (us-east-1c)                   |
+|   +---------------------+           +---------------------+                  |
+|   | EC2 Instance        |           | OpenShift Nodes     |                  |
+|   | +-----------------+ |           | +-----------------+ |                  |
+|   | | EBS Volume      | |           | | Worker Node     | |                  |
+|   | | vol-source      | |           | | (needs vol here)| |                  |
+|   | +--------+--------+ |           | +--------^--------+ |                  |
+|   +----------|----------+           +----------|----------+                  |
+|              |                                 |                             |
+|              | CreateSnapshot                  |                             |
+|              v                                 |                             |
+|   +--------------------------------------------|--------------------------+  |
+|   |              AWS Region (us-east-1)        |                          |  |
+|   |         +---------------------+            |                          |  |
+|   |         |   EBS Snapshot      |            |                          |  |
+|   |         |   snap-xxx          |------------+                          |  |
+|   |         |   (region-wide,     |  CreateVolume(AZ=us-east-1c)          |  |
+|   |         |    not AZ-specific!)|                                       |  |
+|   |         +---------------------+                                       |  |
+|   |                                      +---------------------+          |  |
+|   |                                      | NEW EBS Volume      |          |  |
+|   |                                      | vol-target          |          |  |
+|   |                                      | (in us-east-1c!)    |          |  |
+|   |                                      +---------------------+          |  |
+|   +-----------------------------------------------------------------------+  |
+|                                                                              |
+|   Snapshots are REGION-WIDE (not AZ-specific like volumes)                   |
+|   CreateVolume API accepts AvailabilityZone parameter                        |
+|   This enables creating volumes in ANY AZ from the same snapshot             |
+|                                                                              |
++------------------------------------------------------------------------------+
+``` 
 
 **The Code:**
 
@@ -234,20 +234,20 @@ AWS provides two primary storage services:
 #### Elastic Block Store (EBS)
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         EBS Volume Types                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   General Purpose SSD        Provisioned IOPS SSD      Throughput HDD      │
-│   ┌─────────────────┐        ┌─────────────────┐       ┌──────────────┐   │
-│   │ gp2  │ gp3      │        │ io1  │ io2      │       │ st1   │ sc1  │   │
-│   │ 3K   │ 16K IOPS │        │ 64K  │ 256K IOPS│       │ 500   │ 250  │   │
-│   │ IOPS │ (max)    │        │ IOPS │ (max)    │       │ MiBps │ MiBps│   │
-│   └──────┴──────────┘        └──────┴──────────┘       └───────┴──────┘   │
-│                                                                             │
-│   All EBS types are supported for migration!                               │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                         EBS Volume Types                                    |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   General Purpose SSD        Provisioned IOPS SSD       Throughput HDD      |
+|   +------------------+       +-------------------+      +--------------+    |
+|   | gp2   | gp3      |       | io1   | io2       |      | st1   | sc1  |    |
+|   | 3K    | 16K IOPS |       | 64K   | 256K IOPS |      | 500   | 250  |    |
+|   | IOPS  | (max)    |       | IOPS  | (max)     |      | MiBps | MiBps|    |
+|   +-------+----------+       +-------+-----------+      +-------+------+    |
+|                                                                             |
+|   All EBS types are supported for migration!                                |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 | Volume Type | Use Case | Max Size | Migrated To |
@@ -306,25 +306,25 @@ spec:
 EBS volumes can **only attach to nodes in the same Availability Zone**. The EC2 provider handles this automatically:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    AZ-Aware Scheduling                                      │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   Provider Config                     Automatic Node Selector               │
-│   ┌─────────────────────┐            ┌─────────────────────────────────┐  │
-│   │ spec:               │            │ spec:                           │  │
-│   │   settings:         │ ────────►  │   template:                     │  │
-│   │     target-az:      │            │     spec:                       │  │
-│   │       us-east-1a    │            │       nodeSelector:             │  │
-│   └─────────────────────┘            │         topology.kubernetes.io/ │  │
-│                                      │           zone: us-east-1a      │  │
-│                                      └─────────────────────────────────┘  │
-│                                                                             │
-│   Applied to:                                                               │
-│   - Migrated VirtualMachine                                                 │
-│   - virt-v2v Conversion Pod                                                 │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                    AZ-Aware Scheduling                                      |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   Provider Config                       Automatic Node Selector             |
+|   +---------------------+              +---------------------------------+  |
+|   | spec:               |              | spec:                           |  |
+|   |   settings:         | -----------> |   template:                     |  |
+|   |     target-az:      |              |     spec:                       |  |
+|   |       us-east-1a    |              |       nodeSelector:             |  |
+|   +---------------------+              |         topology.kubernetes.io/ |  |
+|                                        |           zone: us-east-1a      |  |
+|                                        +---------------------------------+  |
+|                                                                             |
+|   Applied to:                                                               |
+|   - Migrated VirtualMachine                                                 |
+|   - virt-v2v Conversion Pod                                                 |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 **The `target-az` must match where your OpenShift worker nodes are running!**
@@ -348,31 +348,31 @@ ip-10-0-3-300.ec2.internal     Ready    us-east-1b
 #### Migration Data Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         EBS Migration Data Flow                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   Source (any AZ)                                      Target AZ            │
-│   ┌────────────┐                                      ┌────────────┐       │
-│   │ EC2        │                                      │ OpenShift  │       │
-│   │ Instance   │                                      │ KubeVirt   │       │
-│   └─────┬──────┘                                      └─────▲──────┘       │
-│         │                                                   │              │
-│   ┌─────▼──────┐   CreateSnapshot    ┌─────────────┐       │              │
-│   │ EBS Volume │ ─────────────────►  │ EBS Snapshot│       │              │
-│   │ vol-xxx    │                     │ snap-xxx    │       │              │
-│   │ (AZ: 1a)   │                     │ (regional)  │       │              │
-│   └────────────┘                     └──────┬──────┘       │              │
-│                                             │               │              │
-│                        CreateVolume(AZ=1c)  │               │              │
-│                                             ▼               │              │
-│                                      ┌─────────────┐       │              │
-│                                      │ NEW EBS Vol │ CSI   │              │
-│                                      │ vol-yyy     │───────┘              │
-│                                      │ (AZ: 1c)    │                      │
-│                                      └─────────────┘                      │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                         EBS Migration Data Flow                             |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   Source (any AZ)                                        Target AZ          |
+|   +--------------+                                      +--------------+    |
+|   | EC2          |                                      | OpenShift    |    |
+|   | Instance     |                                      | KubeVirt     |    |
+|   +------+-------+                                      +------^-------+    |
+|          |                                                     |            |
+|   +------v-------+   CreateSnapshot    +---------------+       |            |
+|   | EBS Volume   | ------------------> | EBS Snapshot  |       |            |
+|   | vol-xxx      |                     | snap-xxx      |       |            |
+|   | (AZ: 1a)     |                     | (regional)    |       |            |
+|   +--------------+                     +-------+-------+       |            |
+|                                                |               |            |
+|                          CreateVolume(AZ=1c)   |               |            |
+|                                                v               |            |
+|                                        +---------------+       |            |
+|                                        | NEW EBS Vol   |  CSI  |            |
+|                                        | vol-yyy       |-------+            |
+|                                        | (AZ: 1c)      |                    |
+|                                        +---------------+                    |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 **Key:** Snapshots are **region-wide**, so `CreateVolume` can specify any AZ in the region.
@@ -410,25 +410,25 @@ ip-10-0-3-300.ec2.internal     Ready    us-east-1b
 | `/32` | 1 | Single host |
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    EC2 Network Architecture                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   VPC: 10.0.0.0/16 (Regional - spans all AZs)                              │
-│   │                                                                        │
-│   ├─ Subnet: 10.0.1.0/24 (Public, us-east-1a)                             │
-│   │   └─ ENI: eni-abc123 ─► EC2 Instance                                  │
-│   │       ├─ Private IP: 10.0.1.50                                        │
-│   │       ├─ Public IP: 54.x.x.x (Elastic IP)                             │
-│   │       └─ MAC: 02:xx:xx:xx:xx:xx ◄── Preserved in migration!           │
-│   │                                                                        │
-│   ├─ Subnet: 10.0.2.0/24 (Private, us-east-1a)                            │
-│   │                                                                        │
-│   └─ Subnet: 10.0.3.0/24 (Private, us-east-1c)  ◄── Different AZ          │
-│                                                                             │
-│   Key: VPC spans region, Subnets are AZ-specific                           │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                    EC2 Network Architecture                                 |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   VPC: 10.0.0.0/16 (Regional - spans all AZs)                               |
+|   |                                                                         |
+|   +-- Subnet: 10.0.1.0/24 (Public, us-east-1a)                              |
+|   |   +-- ENI: eni-abc123 --> EC2 Instance                                  |
+|   |       +-- Private IP: 10.0.1.50                                         |
+|   |       +-- Public IP: 54.x.x.x (Elastic IP)                              |
+|   |       +-- MAC: 02:xx:xx:xx:xx:xx <-- Preserved in migration!            |
+|   |                                                                         |
+|   +-- Subnet: 10.0.2.0/24 (Private, us-east-1a)                             |
+|   |                                                                         |
+|   +-- Subnet: 10.0.3.0/24 (Private, us-east-1c)  <-- Different AZ           |
+|                                                                             |
+|   Key: VPC spans region, Subnets are AZ-specific                            |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 #### Network Migration Mapping
@@ -436,29 +436,29 @@ ip-10-0-3-300.ec2.internal     Ready    us-east-1b
 The EC2 provider maps **subnets** (not VPCs) to target networks:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    Network Mapping Options                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   EC2 Subnet                     OpenShift Target                           │
-│   ┌─────────────────┐           ┌─────────────────────────────────────┐   │
-│   │ subnet-abc123   │           │                                     │   │
-│   │ 10.0.1.0/24     │ ────────► │  Option 1: Pod Network (default)    │   │
-│   └─────────────────┘           │  - Simple, uses cluster SDN         │   │
-│                                 │  - Masquerade NAT for egress        │   │
-│                                 │  - With UDN: uses l2bridge binding  │   │
-│   ┌─────────────────┐           │                                     │   │
-│   │ subnet-def456   │           │  Option 2: Multus                   │   │
-│   │ 10.0.2.0/24     │ ────────► │  - Bridge to external network       │   │
-│   └─────────────────┘           │  - Direct L2 connectivity           │   │
-│                                 │                                     │   │
-│   ┌─────────────────┐           │  Option 3: Ignored                  │   │
-│   │ subnet-ghi789   │           │  - Skip this network interface      │   │
-│   │ 10.0.3.0/24     │ ────────► │  - Interface not created in target  │   │
-│   └─────────────────┘           │                                     │   │
-│                                 └─────────────────────────────────────┘   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                    Network Mapping Options                                  |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   EC2 Subnet                       OpenShift Target                         |
+|   +-----------------+             +-------------------------------------+   |
+|   | subnet-abc123   |             |                                     |   |
+|   | 10.0.1.0/24     | ----------> |  Option 1: Pod Network (default)    |   |
+|   +-----------------+             |  - Simple, uses cluster SDN         |   |
+|                                   |  - Masquerade NAT for egress        |   |
+|                                   |  - With UDN: uses l2bridge binding  |   |
+|   +-----------------+             |                                     |   |
+|   | subnet-def456   |             |  Option 2: Multus                   |   |
+|   | 10.0.2.0/24     | ----------> |  - Bridge to external network       |   |
+|   +-----------------+             |  - Direct L2 connectivity           |   |
+|                                   |                                     |   |
+|   +-----------------+             |  Option 3: Ignored                  |   |
+|   | subnet-ghi789   |             |  - Skip this network interface      |   |
+|   | 10.0.3.0/24     | ----------> |  - Interface not created in target  |   |
+|   +-----------------+             |                                     |   |
+|                                   +-------------------------------------+   |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 #### NetworkMap Example
@@ -506,31 +506,31 @@ UDN is enabled at the **cluster level** (OCP 4.15+). When UDN is enabled:
 In KubeVirt, **binding** defines how a VM's virtual NIC connects to the network:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    KubeVirt Network Bindings                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   Masquerade (default)              L2Bridge (with UDN)                    │
-│   ┌─────────────────────┐           ┌─────────────────────┐               │
-│   │ VM                  │           │ VM                  │               │
-│   │ ┌─────────────────┐ │           │ ┌─────────────────┐ │               │
-│   │ │ eth0            │ │           │ │ eth0            │ │               │
-│   │ │ 10.0.2.2        │ │           │ │ 10.128.0.50     │ │               │
-│   │ │ (private NAT)   │ │           │ │ (pod network IP)│ │               │
-│   │ └────────┬────────┘ │           │ └────────┬────────┘ │               │
-│   └──────────┼──────────┘           └──────────┼──────────┘               │
-│              │                                 │                           │
-│              ▼                                 ▼                           │
-│   ┌─────────────────────┐           ┌─────────────────────┐               │
-│   │ NAT (iptables)      │           │ Bridge (L2)         │               │
-│   │ VM IP → Pod IP      │           │ Direct connection   │               │
-│   └─────────────────────┘           └─────────────────────┘               │
-│                                                                             │
-│   MAC not preserved                 MAC preserved                          │
-│   No inbound connections            L2 connectivity                        │
-│   Simple, works everywhere          Requires UDN/bridge support            │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                    KubeVirt Network Bindings                                |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   Masquerade (default)                L2Bridge (with UDN)                   |
+|   +---------------------+             +---------------------+               |
+|   | VM                  |             | VM                  |               |
+|   | +-----------------+ |             | +-----------------+ |               |
+|   | | eth0            | |             | | eth0            | |               |
+|   | | 10.0.2.2        | |             | | 10.128.0.50     | |               |
+|   | | (private NAT)   | |             | | (pod network IP)| |               |
+|   | +--------+--------+ |             | +--------+--------+ |               |
+|   +----------|----------+             +----------|----------+               |
+|              |                                   |                          |
+|              v                                   v                          |
+|   +---------------------+             +---------------------+               |
+|   | NAT (iptables)      |             | Bridge (L2)         |               |
+|   | VM IP -> Pod IP     |             | Direct connection   |               |
+|   +---------------------+             +---------------------+               |
+|                                                                             |
+|   MAC not preserved                   MAC preserved                         |
+|   No inbound connections              L2 connectivity                       |
+|   Simple, works everywhere            Requires UDN/bridge support           |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 | Binding | MAC Preserved | Inbound Traffic | Use Case |
@@ -546,38 +546,38 @@ In KubeVirt, **binding** defines how a VM's virtual NIC connects to the network:
 ### 2.1 Migration Flow Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    EC2 Migration Pipeline                                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   1. INITIALIZE                                                             │
-│      └─ Validate VM, initialize tracking                                   │
-│                                                                             │
-│   2. PREPARE SOURCE                                                         │
-│      └─ Stop EC2 instance (ensure data consistency)                        │
-│                                                                             │
-│   3. CREATE SNAPSHOTS                                                       │
-│      └─ Create EBS snapshots for all attached volumes                      │
-│      └─ Tag snapshots: forklift.konveyor.io/vmID=i-xxxx                    │
-│                                                                             │
-│   4. SHARE SNAPSHOTS (cross-account only)                                  │
-│      └─ Share snapshots with target AWS account                            │
-│                                                                             │
-│   5. DISK TRANSFER                                                          │
-│      ├─ Create new EBS volumes from snapshots in target AZ                 │
-│      ├─ Create PersistentVolumes (CSI volumeHandle)                        │
-│      └─ Create PersistentVolumeClaims (pre-bound)                          │
-│                                                                             │
-│   6. IMAGE CONVERSION (optional)                                            │
-│      └─ Run virt-v2v to install VirtIO drivers                             │
-│                                                                             │
-│   7. CREATE VM                                                              │
-│      └─ Create KubeVirt VirtualMachine with PVCs attached                  │
-│                                                                             │
-│   8. CLEANUP                                                                │
-│      └─ Delete EBS snapshots (volumes retained by PVCs)                    │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                    EC2 Migration Pipeline                                   |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   1. INITIALIZE                                                             |
+|      +-- Validate VM, initialize tracking                                   |
+|                                                                             |
+|   2. PREPARE SOURCE                                                         |
+|      +-- Stop EC2 instance (ensure data consistency)                        |
+|                                                                             |
+|   3. CREATE SNAPSHOTS                                                       |
+|      +-- Create EBS snapshots for all attached volumes                      |
+|      +-- Tag snapshots: forklift.konveyor.io/vmID=i-xxxx                    |
+|                                                                             |
+|   4. SHARE SNAPSHOTS (cross-account only)                                   |
+|      +-- Share snapshots with target AWS account                            |
+|                                                                             |
+|   5. DISK TRANSFER                                                          |
+|      +-- Create new EBS volumes from snapshots in target AZ                 |
+|      +-- Create PersistentVolumes (CSI volumeHandle)                        |
+|      +-- Create PersistentVolumeClaims (pre-bound)                          |
+|                                                                             |
+|   6. IMAGE CONVERSION (optional)                                            |
+|      +-- Run virt-v2v to install VirtIO drivers                             |
+|                                                                             |
+|   7. CREATE VM                                                              |
+|      +-- Create KubeVirt VirtualMachine with PVCs attached                  |
+|                                                                             |
+|   8. CLEANUP                                                                |
+|      +-- Delete EBS snapshots (volumes retained by PVCs)                    |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 ### 2.2 Limitations
@@ -586,12 +586,12 @@ In KubeVirt, **binding** defines how a VM's virtual NIC connects to the network:
 
 ```
 SUPPORTED:
-   AWS Account A (us-east-1) ──► OpenShift (us-east-1)
+   AWS Account A (us-east-1) -----> OpenShift (us-east-1)
    
-   AWS Account A (us-east-1) ──► AWS Account B (us-east-1)  [cross-account]
-                                      │
-                                      ▼
-                                 OpenShift (us-east-1)
+   AWS Account A (us-east-1) -----> AWS Account B (us-east-1)  [cross-account]
+                                         |
+                                         v
+                                    OpenShift (us-east-1)
 
 NOT SUPPORTED:
    AWS Account A (us-east-1) --X--> OpenShift (eu-west-1)
@@ -897,7 +897,7 @@ kubectl get pvc -n <ns> -l forklift.konveyor.io/plan=<plan>
    A: The source EC2 instance is preserved. You can restart it if migration fails.
 
 4. **Q: How long does migration take?**
-   A: Depends on volume sizes. Snapshot creation is usually the longest phase (~1-2 min per 100GB).
+   A: Disk transfer is immediate - no data is actually copied (volumes are created directly from snapshots in AWS). The main time is virt-v2v guest conversion which takes a few minutes for OS and disk auto-detection.
 
 5. **Q: Does it support Windows?**
    A: Yes! Both Windows Server and desktop versions with automatic VirtIO driver installation.

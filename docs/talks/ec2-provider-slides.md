@@ -97,24 +97,24 @@ Speaker Notes:
 # Regions and Availability Zones
 
 ```
-           AWS Region: us-east-1 (N. Virginia)
-+-----------------------------------------------------------+
-|                                                           |
-|   +---------+   +---------+   +---------+   +---------+   |
-|   |  AZ-a   |   |  AZ-b   |   |  AZ-c   |   |  AZ-d   |   |
-|   |         |   |         |   |         |   |         |   |
-|   | +-----+ |   |         |   | +-----+ |   |         |   |
-|   | | EC2 | |   |         |   | | OCP | |   |         |   |
-|   | +--+--+ |   |         |   | |Nodes| |   |         |   |
-|   |    |    |   |         |   | +-----+ |   |         |   |
-|   | +--v--+ |   |         |   |         |   |         |   |
-|   | | EBS | |   |         |   |         |   |         |   |
-|   | +-----+ |   |         |   |         |   |         |   |
-|   +---------+   +---------+   +---------+   +---------+   |
-|                                                           |
-|   EBS volumes CANNOT move between AZs!                    |
-|   Snapshots CAN cross AZs (this is our solution!)         |
-+-----------------------------------------------------------+
+              AWS Region: us-east-1 (N. Virginia)
++---------------------------------------------------------------+
+|                                                               |
+|   +-----------+   +-----------+   +-----------+   +---------+ |
+|   |   AZ-a    |   |   AZ-b    |   |   AZ-c    |   |  AZ-d   | |
+|   |           |   |           |   |           |   |         | |
+|   | +-------+ |   |           |   | +-------+ |   |         | |
+|   | |  EC2  | |   |           |   | |  OCP  | |   |         | |
+|   | +---+---+ |   |           |   | | Nodes | |   |         | |
+|   |     |     |   |           |   | +-------+ |   |         | |
+|   | +---v---+ |   |           |   |           |   |         | |
+|   | |  EBS  | |   |           |   |           |   |         | |
+|   | +-------+ |   |           |   |           |   |         | |
+|   +-----------+   +-----------+   +-----------+   +---------+ |
+|                                                               |
+|   EBS volumes CANNOT move between AZs!                        |
+|   Snapshots CAN cross AZs (this is our solution!)             |
++---------------------------------------------------------------+
 ```
 
 <!--
@@ -250,8 +250,8 @@ Speaker Notes:
 Speaker Notes:
 - Cold migration only - instance must be stopped
 - Snapshots are region-wide, enabling cross-AZ volume creation
-- CreateVolume API lets you specify any AZ in the region when restoring from snapshot
-- Guest conversion is optional but recommended
+- Disk transfer is IMMEDIATE - no data is copied, volumes created directly from snapshots
+- virt-v2v takes a few minutes for OS/disk auto-detection (main time consumer)
 - Cleanup preserves volumes (now backing PVCs) but removes snapshots
 -->
 
@@ -506,5 +506,5 @@ Speaker Notes:
 |----------|--------|
 | Can I migrate running instances? | No, must be stopped for data consistency |
 | What about Elastic IPs? | They stay in EC2. Use K8s Services instead |
-| How long does migration take? | ~1-2 min per 100GB for snapshots, plus conversion |
+| How long does migration take? | Disk transfer is immediate (no data copied). virt-v2v takes a few minutes for OS detection |
 | Windows support? | Yes! Full support with automatic driver install |
