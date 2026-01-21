@@ -4,6 +4,218 @@ theme: default
 paginate: true
 title: EC2 Provider - Migrating EC2 Instances to OpenShift Virtualization
 author: Forklift Team
+style: |
+  /* Red Hat Color Palette */
+  :root {
+    --rh-red: #ee0000;
+    --rh-red-dark: #a60000;
+    --rh-red-light: #f56e6e;
+    --rh-red-05: #fef0f0;
+    --rh-red-10: #fce3e3;
+    --rh-white: #ffffff;
+    --rh-black: #000000;
+    --rh-ux-black: #151515;
+    --rh-gray-10: #f2f2f2;
+    --rh-gray-20: #e0e0e0;
+    --rh-gray-30: #c7c7c7;
+    --rh-gray-50: #707070;
+    --rh-gray-60: #4d4d4d;
+    --rh-gray-70: #383838;
+  }
+
+  /* Base Slide Styling - White background */
+  section {
+    background: var(--rh-white);
+    color: var(--rh-black);
+    font-family: 'Red Hat Display', 'Red Hat Text', 'Overpass', Arial, sans-serif;
+    font-size: 18px;
+    padding: 40px 60px;
+  }
+
+  /* Title/Lead Slides - Red background */
+  section.lead {
+    background: var(--rh-red);
+    color: var(--rh-white);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  section.lead h1 {
+    color: var(--rh-white);
+    font-size: 28px;
+    border: none;
+    margin-bottom: 0.3em;
+  }
+
+  section.lead h2 {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+    font-size: 18px;
+  }
+
+  /* Headers */
+  h1 {
+    color: var(--rh-red);
+    font-weight: 500;
+    font-size: 28px;
+    border-bottom: none;
+    margin-bottom: 24px;
+  }
+
+  h2 {
+    color: var(--rh-black);
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  h3 {
+    color: var(--rh-black);
+    font-weight: 400;
+    font-size: 18px;
+  }
+
+  /* Text */
+  p, li {
+    color: var(--rh-black);
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  strong {
+    color: var(--rh-black);
+    font-weight: 700;
+  }
+
+  /* Links */
+  a {
+    color: var(--rh-red);
+  }
+
+  /* Code Blocks */
+  pre {
+    background: var(--rh-gray-10);
+    border-left: 4px solid var(--rh-red);
+    border-radius: 4px;
+    padding: 16px 20px;
+    font-size: 14px;
+  }
+
+  code {
+    background: var(--rh-gray-10);
+    color: var(--rh-ux-black);
+    font-family: 'Red Hat Mono', 'Overpass Mono', 'Consolas', monospace;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 16px;
+  }
+
+  pre code {
+    background: transparent;
+    padding: 0;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    margin: 20px 0;
+  }
+
+  th {
+    background: var(--rh-red);
+    color: var(--rh-white);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 500;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rh-gray-30);
+    color: var(--rh-black);
+  }
+
+  tr:nth-child(even) {
+    background: var(--rh-gray-10);
+  }
+
+  /* Lists */
+  ul, ol {
+    margin-left: 0;
+    padding-left: 1.5em;
+  }
+
+  li {
+    margin-bottom: 0.5em;
+  }
+
+  li::marker {
+    color: var(--rh-red);
+  }
+
+  /* Page Number */
+  section::after {
+    color: var(--rh-gray-50);
+    font-size: 14px;
+  }
+
+  /* Blockquotes for highlights */
+  blockquote {
+    background: linear-gradient(90deg, var(--rh-red) 4px, var(--rh-red-05) 4px);
+    border-radius: 0 4px 4px 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+    color: var(--rh-black);
+  }
+
+  /* Emphasis colors */
+  em {
+    color: var(--rh-red);
+    font-style: normal;
+    font-weight: 500;
+  }
+
+  /* Base slide with white footer strip via gradient */
+  section {
+    background: linear-gradient(to bottom, var(--rh-white) 0%, var(--rh-white) calc(100% - 100px), var(--rh-white) calc(100% - 100px), var(--rh-white) 100%);
+    padding-bottom: 120px;
+  }
+
+  /* Title/Lead slides with red background + white footer strip */
+  section.lead {
+    background: linear-gradient(to bottom, var(--rh-red) 0%, var(--rh-red) calc(100% - 100px), var(--rh-white) calc(100% - 100px), var(--rh-white) 100%);
+  }
+
+  /* Footer styling */
+  footer {
+    position: absolute;
+    bottom: 25px;
+    right: 60px;
+    left: auto;
+    width: 130px;
+    height: 40px;
+    color: transparent;
+    font-size: 0;
+  }
+
+  footer img {
+    width: 130px;
+    height: auto;
+  }
+
+  /* Page number positioning */
+  section::after {
+    position: absolute;
+    bottom: 35px;
+    left: 40px;
+    right: auto;
+    color: var(--rh-gray-50);
+    font-size: 14px;
+  }
+footer: '![Red Hat](redhat-logo.svg)'
 ---
 
 <!-- _class: lead -->
@@ -497,8 +709,6 @@ Speaker Notes:
   https://github.com/kubev2v/forklift
 
 ---
-
-<!-- _class: lead -->
 
 # Questions?
 
