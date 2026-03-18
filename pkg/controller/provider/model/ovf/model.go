@@ -108,6 +108,9 @@ type Disk struct {
 	FileRef                 string `sql:""`
 	Format                  string `sql:""`
 	PopulatedSize           int64  `sql:""`
+	ControllerType          string `sql:""`
+	ControllerAddress       int    `sql:""`
+	AddressOnParent         int    `sql:""`
 }
 
 // Virtual Device.

@@ -121,11 +121,14 @@ type Disk struct {
 	Base
 	WindowsPath string `sql:"" json:"windowsPath,omitempty"`
 	// Mapped path on SMB mount (e.g., /hyperv/disk.vhdx)
-	SMBPath    string `sql:"" json:"smbPath,omitempty"`
-	Capacity   int64  `sql:"" json:"capacity"`
-	Format     string `sql:"" json:"format,omitempty"`
-	RCTEnabled bool   `sql:"" json:"rctEnabled"` // Resilient Change Tracking for warm migration
-	Datastore  Ref    `sql:"" json:"datastore"`
+	SMBPath        string `sql:"" json:"smbPath,omitempty"`
+	Capacity       int64  `sql:"" json:"capacity"`
+	Format         string `sql:"" json:"format,omitempty"`
+	RCTEnabled     bool   `sql:"" json:"rctEnabled"` // Resilient Change Tracking for warm migration
+	Datastore      Ref    `sql:"" json:"datastore"`
+	ControllerType string `sql:"" json:"controllerType,omitempty"`
+	ControllerNum  int    `sql:"" json:"controllerNum"`
+	ControllerLoc  int    `sql:"" json:"controllerLoc"`
 }
 
 type NIC struct {

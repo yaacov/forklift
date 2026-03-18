@@ -75,6 +75,9 @@ type VmDisk struct {
 	FileRef                 string
 	Format                  string
 	PopulatedSize           int64
+	ControllerType          string `json:"controllerType,omitempty"`
+	ControllerAddress       int    `json:"controllerAddress"`
+	AddressOnParent         int    `json:"addressOnParent"`
 }
 
 // Device represents a virtual device

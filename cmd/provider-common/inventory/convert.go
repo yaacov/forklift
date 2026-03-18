@@ -22,9 +22,86 @@ func init() {
 const (
 	ResourceTypeProcessor       = 3
 	ResourceTypeMemory          = 4
+	ResourceTypeIDEController   = 5
+	ResourceTypeSCSIController  = 6
 	ResourceTypeEthernetAdapter = 10
 	ResourceTypeHardDiskDrive   = 17
+	ResourceTypeOtherSCSI       = 20
 )
+
+// controllerInfo holds parsed controller metadata from OVF Items.
+type controllerInfo struct {
+	busType   string
+	busNumber int
+}
+
+// classifyController derives a bus type string from an OVF controller Item's ResourceType and ResourceSubType.
+func classifyController(item ovf.Item) string {
+	switch item.ResourceType {
+	case ResourceTypeIDEController:
+		return "IDE"
+	case ResourceTypeSCSIController, ResourceTypeOtherSCSI:
+		sub := strings.ToLower(item.ResourceSubType)
+		if strings.Contains(sub, "sata") || strings.Contains(sub, "ahci") {
+			return "SATA"
+		}
+		return "SCSI"
+	default:
+		return ""
+	}
+}
+
+// enrichDisksWithControllerTopology matches OVF VirtualHardwareSection Items to
+// VmDisks and populates controller topology fields (ControllerType, ControllerAddress,
+// AddressOnParent).
+func enrichDisksWithControllerTopology(items []ovf.Item, disks []ovf.VmDisk) {
+	controllers := map[string]controllerInfo{}
+	for _, item := range items {
+		busType := classifyController(item)
+		if busType == "" {
+			continue
+		}
+		busNumber, _ := strconv.Atoi(item.Address)
+		controllers[item.InstanceID] = controllerInfo{
+			busType:   busType,
+			busNumber: busNumber,
+		}
+	}
+
+	diskByID := map[string]int{}
+	for idx := range disks {
+		diskByID[disks[idx].DiskId] = idx
+	}
+
+	for _, item := range items {
+		if item.ResourceType != ResourceTypeHardDiskDrive {
+			continue
+		}
+		diskIdx, found := matchHostResourceToDisk(item.HostResource, diskByID)
+		if !found {
+			continue
+		}
+		if ctrl, ok := controllers[item.Parent]; ok {
+			disks[diskIdx].ControllerType = ctrl.busType
+			disks[diskIdx].ControllerAddress = ctrl.busNumber
+		}
+		if item.AddressOnParent != "" {
+			addr, _ := strconv.Atoi(item.AddressOnParent)
+			disks[diskIdx].AddressOnParent = addr
+		}
+	}
+}
+
+// matchHostResourceToDisk extracts a diskId reference from an OVF HostResource string
+// and returns the index of the matching disk.
+func matchHostResourceToDisk(hostResource string, diskByID map[string]int) (int, bool) {
+	for diskId, idx := range diskByID {
+		if strings.Contains(hostResource, diskId) {
+			return idx, true
+		}
+	}
+	return 0, false
+}
 
 func ConvertToVmStruct(envelope []ovf.Envelope, ovaPath []string) []ovf.VM {
 	var vms []ovf.VM
@@ -101,6 +178,8 @@ func ConvertToVmStruct(envelope []ovf.Envelope, ovaPath []string) []ovf.VM {
 
 			}
 
+			enrichDisksWithControllerTopology(virtualSystem.HardwareSection.Items, newVM.Disks)
+
 			for _, network := range vmXml.NetworkSection.Networks {
 				newVM.Networks = append(newVM.Networks, ovf.VmNetwork{
 					Name:        network.Name,
@@ -145,6 +224,7 @@ func ConvertToNetworkStruct(envelopes []ovf.Envelope) []ovf.VmNetwork {
 func ConvertToDiskStruct(envelopes []ovf.Envelope, ovaPath []string) []ovf.VmDisk {
 	var disks []ovf.VmDisk
 	for i, envelope := range envelopes {
+		startIdx := len(disks)
 		for j, disk := range envelope.DiskSection.Disks {
 			name := envelope.References.File[j].Href
 			newDisk := ovf.VmDisk{
@@ -159,6 +239,9 @@ func ConvertToDiskStruct(envelopes []ovf.Envelope, ovaPath []string) []ovf.VmDis
 			}
 			newDisk.ID = diskIDMap.GetUUID(newDisk, ovaPath[i]+"/"+name)
 			disks = append(disks, newDisk)
+		}
+		for _, vs := range envelope.VirtualSystem {
+			enrichDisksWithControllerTopology(vs.HardwareSection.Items, disks[startIdx:])
 		}
 	}
 

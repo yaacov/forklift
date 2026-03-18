@@ -20,12 +20,15 @@ type VM struct {
 
 // Disk represents a Hyper-V virtual disk.
 type Disk struct {
-	ID          string `json:"id"`
-	WindowsPath string `json:"windowsPath"`
-	SMBPath     string `json:"smbPath"`
-	Capacity    int64  `json:"capacity"`
-	Format      string `json:"format"`
-	RCTEnabled  bool   `json:"rctEnabled"`
+	ID             string `json:"id"`
+	WindowsPath    string `json:"windowsPath"`
+	SMBPath        string `json:"smbPath"`
+	Capacity       int64  `json:"capacity"`
+	Format         string `json:"format"`
+	RCTEnabled     bool   `json:"rctEnabled"`
+	ControllerType string `json:"controllerType"`
+	ControllerNum  int    `json:"controllerNum"`
+	ControllerLoc  int    `json:"controllerLoc"`
 }
 
 // NIC represents a Hyper-V virtual network interface.

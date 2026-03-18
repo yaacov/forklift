@@ -502,6 +502,9 @@ func applyDiskTo(r *types.Disk, m *model.Disk) {
 	m.Capacity = r.Capacity
 	m.Format = r.Format
 	m.RCTEnabled = r.RCTEnabled
+	m.ControllerType = r.ControllerType
+	m.ControllerNum = r.ControllerNum
+	m.ControllerLoc = r.ControllerLoc
 	m.Datastore = model.Ref{
 		Kind: "Storage",
 		ID:   hvutil.StorageIDDefault,

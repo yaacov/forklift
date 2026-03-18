@@ -193,6 +193,9 @@ type Disk struct {
 	FileRef                 string `json:"FileRef"`
 	Format                  string `json:"Format"`
 	PopulatedSize           int64  `json:"PopulatedSize"`
+	ControllerType          string `json:"ControllerType"`
+	ControllerAddress       int    `json:"ControllerAddress"`
+	AddressOnParent         int    `json:"AddressOnParent"`
 }
 
 // Apply to (update) the model.
@@ -206,6 +209,9 @@ func (r *Disk) ApplyTo(m *model.Disk) {
 	m.FileRef = r.FileRef
 	m.Format = r.Format
 	m.PopulatedSize = r.PopulatedSize
+	m.ControllerType = r.ControllerType
+	m.ControllerAddress = r.ControllerAddress
+	m.AddressOnParent = r.AddressOnParent
 }
 
 type Storage struct {

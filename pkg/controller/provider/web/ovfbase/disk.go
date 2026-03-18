@@ -137,6 +137,9 @@ type Disk struct {
 	FileRef                 string
 	Format                  string
 	PopulatedSize           int64
+	ControllerType          string `json:"controllerType,omitempty"`
+	ControllerAddress       int    `json:"controllerAddress"`
+	AddressOnParent         int    `json:"addressOnParent"`
 }
 
 // Build the resource using the model.
@@ -149,6 +152,9 @@ func (r *Disk) With(m *model.Disk) {
 	r.FileRef = m.FileRef
 	r.Format = m.Format
 	r.PopulatedSize = m.PopulatedSize
+	r.ControllerType = m.ControllerType
+	r.ControllerAddress = m.ControllerAddress
+	r.AddressOnParent = m.AddressOnParent
 }
 
 // Build self link (URI).

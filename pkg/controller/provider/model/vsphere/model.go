@@ -352,9 +352,10 @@ func (m *VM) Validated() bool {
 
 // Virtual Controller.
 type Controller struct {
-	Key   int32   `json:"key"`
-	Bus   string  `json:"bus"`
-	Disks []int32 `sql:""`
+	Key       int32   `json:"key"`
+	Bus       string  `json:"bus"`
+	BusNumber int32   `json:"busNumber"`
+	Disks     []int32 `sql:""`
 }
 
 // Virtual Disk.

@@ -147,12 +147,15 @@ func (h *DiskHandler) filter(ctx *gin.Context, list *[]model.Disk) (err error) {
 // REST Resource.
 type Disk struct {
 	Resource
-	WindowsPath string `json:"windowsPath,omitempty"`
-	SMBPath     string `json:"smbPath,omitempty"`
-	Capacity    int64  `json:"capacity"`
-	Format      string `json:"format,omitempty"`
-	RCTEnabled  bool   `json:"rctEnabled"`
-	Datastore   string `json:"datastore"`
+	WindowsPath    string `json:"windowsPath,omitempty"`
+	SMBPath        string `json:"smbPath,omitempty"`
+	Capacity       int64  `json:"capacity"`
+	Format         string `json:"format,omitempty"`
+	RCTEnabled     bool   `json:"rctEnabled"`
+	Datastore      string `json:"datastore"`
+	ControllerType string `json:"controllerType,omitempty"`
+	ControllerNum  int    `json:"controllerNum"`
+	ControllerLoc  int    `json:"controllerLoc"`
 }
 
 // Build the resource using the model.
@@ -164,6 +167,9 @@ func (r *Disk) With(m *model.Disk) {
 	r.Format = m.Format
 	r.RCTEnabled = m.RCTEnabled
 	r.Datastore = m.Datastore.ID
+	r.ControllerType = m.ControllerType
+	r.ControllerNum = m.ControllerNum
+	r.ControllerLoc = m.ControllerLoc
 }
 
 // Build self link (URI).

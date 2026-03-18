@@ -197,7 +197,13 @@ func (r *Volume) addAttachMents(m *model.Volume) {
 		m.Attachments = append(
 			m.Attachments,
 			model.Attachment{
-				ID: n.ID,
+				AttachedAt:   n.AttachedAt,
+				AttachmentID: n.AttachmentID,
+				Device:       n.Device,
+				HostName:     n.HostName,
+				ID:           n.ID,
+				ServerID:     n.ServerID,
+				VolumeID:     n.VolumeID,
 			})
 	}
 }

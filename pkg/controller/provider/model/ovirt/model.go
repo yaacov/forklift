@@ -196,6 +196,7 @@ type Snapshot struct {
 type DiskAttachment struct {
 	ID              string `json:"id"`
 	Interface       string `json:"interface"`
+	LogicalName     string `json:"logicalName"`
 	SCSIReservation bool   `json:"scsiReservation"`
 	Disk            string `json:"disk"`
 	Bootable        bool   `json:"bootable"`

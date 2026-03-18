@@ -383,12 +383,15 @@ func (r *Client) extractDisks(domain driver.Domain, smbWindowsPrefix string, vmU
 		}
 
 		disks = append(disks, types.Disk{
-			ID:          fmt.Sprintf("%s-disk-%d", vmUUID, i),
-			WindowsPath: di.Path,
-			SMBPath:     smbPath,
-			Capacity:    capacity,
-			Format:      format,
-			RCTEnabled:  rctEnabled,
+			ID:             fmt.Sprintf("%s-disk-%d", vmUUID, i),
+			WindowsPath:    di.Path,
+			SMBPath:        smbPath,
+			Capacity:       capacity,
+			Format:         format,
+			RCTEnabled:     rctEnabled,
+			ControllerType: di.ControllerType,
+			ControllerNum:  di.ControllerNum,
+			ControllerLoc:  di.ControllerLoc,
 		})
 	}
 	return disks

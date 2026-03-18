@@ -322,6 +322,7 @@ type VM struct {
 			ID              string `json:"id"`
 			Bootable        string `json:"bootable"`
 			Name            string
+			LogicalName     string `json:"logical_name"`
 			Interface       string `json:"interface"`
 			SCSIReservation string `json:"uses_scsi_reservation"`
 			Disk            Ref    `json:"disk"`
@@ -439,6 +440,7 @@ func (r *VM) addDiskAttachment(m *model.VM) {
 			model.DiskAttachment{
 				ID:              da.ID,
 				Interface:       da.Interface,
+				LogicalName:     da.LogicalName,
 				SCSIReservation: r.bool(da.SCSIReservation),
 				Disk:            da.Disk.ID,
 				Bootable:        r.bool(da.Bootable),

@@ -1064,51 +1064,59 @@ func (v *VmAdapter) updateControllers(devArray *types.ArrayOfVirtualDevice) {
 		switch controller := dev.(type) {
 		case *types.VirtualIDEController:
 			md = model.Controller{
-				Bus:   IDE,
-				Disks: controller.Device,
-				Key:   controller.Key,
+				Bus:       IDE,
+				BusNumber: controller.BusNumber,
+				Disks:     controller.Device,
+				Key:       controller.Key,
 			}
 		case *types.VirtualBusLogicController:
 			md = model.Controller{
-				Bus:   SCSI,
-				Disks: controller.Device,
-				Key:   controller.Key,
+				Bus:       SCSI,
+				BusNumber: controller.BusNumber,
+				Disks:     controller.Device,
+				Key:       controller.Key,
 			}
 		case *types.VirtualLsiLogicController:
 			md = model.Controller{
-				Bus:   SCSI,
-				Disks: controller.Device,
-				Key:   controller.Key,
+				Bus:       SCSI,
+				BusNumber: controller.BusNumber,
+				Disks:     controller.Device,
+				Key:       controller.Key,
 			}
 		case *types.VirtualLsiLogicSASController:
 			md = model.Controller{
-				Bus:   SCSI,
-				Disks: controller.Device,
-				Key:   controller.Key,
+				Bus:       SCSI,
+				BusNumber: controller.BusNumber,
+				Disks:     controller.Device,
+				Key:       controller.Key,
 			}
 		case *types.ParaVirtualSCSIController:
 			md = model.Controller{
-				Bus:   SCSI,
-				Disks: controller.Device,
-				Key:   controller.Key,
+				Bus:       SCSI,
+				BusNumber: controller.BusNumber,
+				Disks:     controller.Device,
+				Key:       controller.Key,
 			}
 		case *types.VirtualAHCIController:
 			md = model.Controller{
-				Bus:   SATA,
-				Disks: controller.Device,
-				Key:   controller.Key,
+				Bus:       SATA,
+				BusNumber: controller.BusNumber,
+				Disks:     controller.Device,
+				Key:       controller.Key,
 			}
 		case *types.VirtualUSBController:
 			md = model.Controller{
-				Bus:   USB,
-				Disks: controller.Device,
-				Key:   controller.Key,
+				Bus:       USB,
+				BusNumber: controller.BusNumber,
+				Disks:     controller.Device,
+				Key:       controller.Key,
 			}
 		case *types.VirtualNVMEController:
 			md = model.Controller{
-				Bus:   NVME,
-				Disks: controller.Device,
-				Key:   controller.Key,
+				Bus:       NVME,
+				BusNumber: controller.BusNumber,
+				Disks:     controller.Device,
+				Key:       controller.Key,
 			}
 		}
 		controllers = append(controllers, md)

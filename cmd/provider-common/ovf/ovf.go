@@ -114,6 +114,7 @@ type Item struct {
 	ResourceType    int             `xml:"ResourceType"`
 	VirtualQuantity int32           `xml:"VirtualQuantity"`
 	Address         string          `xml:"Address,omitempty"`
+	AddressOnParent string          `xml:"AddressOnParent,omitempty"`
 	ResourceSubType string          `xml:"ResourceSubType,omitempty"`
 	Parent          string          `xml:"Parent,omitempty"`
 	HostResource    string          `xml:"HostResource,omitempty"`
