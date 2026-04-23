@@ -23,8 +23,25 @@ spec:
         - name: "{{ cli_download_container_name }}"
           image: "{{ cli_download_image_fqin }}"
           ports:
-            - containerPort: 8080
+            - containerPort: 8443
               protocol: TCP
+            - containerPort: 8081
+              protocol: TCP
+            - containerPort: 9443
+              protocol: TCP
+          env:
+            - name: MCP_OUTPUT_FORMAT
+              value: "{{ cli_download_mcp_output_format }}"
+            - name: MCP_MAX_RESPONSE_CHARS
+              value: "{{ cli_download_mcp_max_response_chars }}"
+            - name: MCP_KUBE_SERVER
+              value: "https://kubernetes.default.svc"
+            - name: MCP_KUBE_INSECURE
+              value: "{{ cli_download_mcp_kube_insecure }}"
+            - name: MCP_READ_ONLY
+              value: "{{ cli_download_mcp_read_only }}"
+            - name: MCP_VERBOSE
+              value: "{{ cli_download_mcp_verbose }}"
           imagePullPolicy: "{{ image_pull_policy }}"
           resources:
             limits:
@@ -33,6 +50,40 @@ spec:
             requests:
               cpu: "{{ cli_download_container_requests_cpu }}"
               memory: "{{ cli_download_container_requests_memory }}"
+          readinessProbe:
+            tcpSocket:
+              port: 8443
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8443
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: home
+              mountPath: /home/mtv
+            - name: cli-serving-cert
+              readOnly: true
+              mountPath: /var/cli-serving-cert
+            - name: mcp-serving-cert
+              readOnly: true
+              mountPath: /var/mcp-serving-cert
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: home
+          emptyDir: {}
+        - name: cli-serving-cert
+          secret:
+            secretName: {{ cli_download_tls_secret_name }}
+            defaultMode: 420
+        - name: mcp-serving-cert
+          secret:
+            secretName: {{ mcp_server_tls_secret_name }}
+            defaultMode: 420
       restartPolicy: Always
       dnsPolicy: ClusterFirst
   strategy:

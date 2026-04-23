@@ -79,6 +79,10 @@ spec:
                 type: string
                 enum: ["true", "false"]
                 description: "Enable CLI download service (default: true)"
+              feature_lightspeed_integration:
+                type: string
+                enum: ["true", "false"]
+                description: "Register MCP server with OpenShift Lightspeed (default: false)"
               feature_vsphere_vmware_driver_removal:
                 type: string
                 enum: ["true", "false"]
@@ -229,6 +233,26 @@ spec:
                 type: string
                 description: "CLI download service memory request (default: 64Mi)"
                 example: "128Mi"
+
+              # CLI Download MCP Server Settings
+              cli_download_mcp_output_format:
+                type: string
+                description: "MCP server output format (default: markdown)"
+                example: "markdown"
+              cli_download_mcp_max_response_chars:
+                x-kubernetes-int-or-string: true
+                description: "MCP server max response chars, 0 for unlimited (default: 0)"
+              cli_download_mcp_kube_insecure:
+                type: string
+                enum: ["true", "false"]
+                description: "Skip TLS verification for in-cluster MCP calls (default: false)"
+              cli_download_mcp_read_only:
+                type: string
+                enum: ["true", "false"]
+                description: "Run MCP server in read-only mode (default: false)"
+              cli_download_mcp_verbose:
+                x-kubernetes-int-or-string: true
+                description: "MCP server verbosity level (default: 2)"
 
               # UI Plugin Resource Configuration
               ui_plugin_container_limits_cpu:
