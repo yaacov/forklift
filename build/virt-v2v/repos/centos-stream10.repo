@@ -1,0 +1,30 @@
+# CentOS Stream 10 — AppStream/CRB/BaseOS for virt-v2v packages not in UBI repos.
+# Plus EPEL 10: btrfs-progs (needed for btrfs guests) is not in CS10 repos.
+# gpgcheck=0: CentOS signing keys are rejected by UBI 10 crypto policy in container builds.
+[cs10-baseos]
+name=CentOS Stream 10 - BaseOS
+baseurl=https://mirror.stream.centos.org/10-stream/BaseOS/$basearch/os/
+gpgcheck=0
+enabled=1
+skip_if_unavailable=0
+
+[cs10-appstream]
+name=CentOS Stream 10 - AppStream
+baseurl=https://mirror.stream.centos.org/10-stream/AppStream/$basearch/os/
+gpgcheck=0
+enabled=1
+skip_if_unavailable=0
+
+[cs10-crb]
+name=CentOS Stream 10 - CRB
+baseurl=https://mirror.stream.centos.org/10-stream/CRB/$basearch/os/
+gpgcheck=0
+enabled=1
+skip_if_unavailable=0
+
+[epel-10]
+name=EPEL 10
+baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
+gpgcheck=0
+enabled=1
+skip_if_unavailable=0
